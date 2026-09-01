@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>FlyTrue Politics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#10151c; --line:#26303c; --line-soft:#1b232c;
+    --text:#e7ecf2; --muted:#8794a3;
+    --amber:#e8a33d; --blue:#6fa8d8; --green:#4fae83;
+    --font:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--text); font-family:var(--font); line-height:1.5; -webkit-font-smoothing:antialiased; padding:26px 18px 60px; }
+  a{ color:var(--blue); }
+  .dashboard{ max-width:1000px; margin:0 auto; }
+
+  .dash-header{ margin-bottom:28px; }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .logo{ width:44px; height:44px; border-radius:9px; object-fit:cover; flex:none; }
+  .brand-text h1{ font-size:26px; font-weight:700; letter-spacing:-0.01em; margin:0; }
+  .tagline{ color:var(--muted); font-size:14px; margin:2px 0 0; }
+
+  .dash-body{ display:block; }
+  .col-side{ margin-top:36px; }
+  @media (min-width:900px){
+    .dash-body{ display:grid; grid-template-columns:1fr 340px; gap:40px; align-items:start; }
+    .col-side{ margin-top:0; }
+  }
+
+  h2{ font-size:16px; font-weight:600; margin:0 0 4px; }
+
+  .progress-block{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:34px; }
+  .progress-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .progress-label{ font-size:13px; color:var(--muted); }
+  .progress-count{ font-family:var(--mono); font-size:15px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+  .bar-track{ height:6px; background:var(--line-soft); border-radius:3px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--amber); border-radius:3px; width:0%; transition:width .35s ease; }
+  @media (prefers-reduced-motion: reduce){ .bar-fill{ transition:none; } }
+
+  .leg{ margin-bottom:36px; }
+  .leg-head{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .dotm{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .dotm.ground{ background:var(--amber); }
+  .dotm.departure{ background:var(--blue); }
+  .dotm.cruise{ background:var(--green); }
+  .leg-title{ font-size:18px; font-weight:600; }
+  .leg-meta{ margin-left:auto; font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+  .leg-note{ color:var(--muted); font-size:13.5px; margin:0 0 14px; max-width:54ch; }
+
+  .item{ display:flex; align-items:flex-start; gap:12px; padding:12px 4px; border-top:1px solid var(--line); cursor:pointer; }
+  .leg-items .item:last-child{ border-bottom:1px solid var(--line); }
+
+  .chk{ position:absolute; opacity:0; width:1px; height:1px; }
+  .box{ width:20px; height:20px; flex:none; margin-top:1px; border:1.5px solid var(--muted); border-radius:5px; position:relative; }
+  .chk:checked + .box{ background:var(--green); border-color:var(--green); }
+  .chk:checked + .box::after{ content:""; position:absolute; left:6px; top:2px; width:5px; height:10px; border:solid var(--bg); border-width:0 2px 2px 0; transform:rotate(40deg); }
+  .chk:focus-visible + .box{ outline:2px solid var(--blue); outline-offset:2px; }
+
+  .itext{ display:flex; flex-direction:column; gap:2px; }
+  .ititle{ font-size:15px; font-weight:500; }
+  .isub{ font-size:13px; color:var(--muted); }
+  .isub a{ color:var(--blue); text-decoration:underline; text-underline-offset:2px; }
+  .item.done .ititle{ color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line); }
+  .item.done .isub{ opacity:.6; }
+
+  .loop-items{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .loop-items li{ display:flex; gap:10px; align-items:flex-start; font-size:14.5px; padding:2px 0; }
+  .loop-items li::before{ content:"↻"; color:var(--green); flex:none; font-size:14px; line-height:1.4; }
+  .loop-items b{ font-weight:600; }
+  .loop-items a{ text-decoration:none; }
+  .loop-items a b{ text-decoration:underline; text-underline-offset:2px; }
+
+  .side-block{ border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:24px; }
+  .side-block .hint{ color:var(--muted); font-size:13px; margin:0 0 12px; }
+
+  .cheat-list{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+  .cheat-list div b{ display:block; font-size:13.5px; font-weight:600; margin-bottom:2px; }
+  .cheat-list div span{ font-size:13px; color:var(--muted); }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip{ display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:100px; padding:7px 13px; font-size:13px; color:var(--text); text-decoration:none; }
+  .chip:hover{ border-color:var(--blue); color:var(--blue); }
+  .chip:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+
+  .notes-section textarea{
+    width:100%; min-height:220px; margin-top:12px; resize:vertical;
+    background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px; font-family:var(--font); font-size:14px; line-height:1.6;
+  }
+  .notes-section textarea:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
+  .save-hint{ font-size:12px; color:var(--muted); margin:8px 0 0; min-height:16px; }
+
+  .watch{ border:1px solid var(--amber); border-radius:10px; padding:16px 18px; }
+  .watch-title{ font-size:15px; font-weight:600; margin:0 0 4px; color:var(--amber); }
+  .watch-note{ font-size:13px; color:var(--muted); margin:0 0 12px; }
+  .watch-grid{ display:flex; flex-direction:column; gap:10px; }
+  .watch-grid div b{ font-weight:600; font-size:14px; }
+  .watch-grid div span{ display:block; font-size:13px; color:var(--muted); margin-top:1px; }
+
+  footer{ font-size:12.5px; color:var(--muted); text-align:center; margin-top:34px; }
+  footer button{ background:none; border:none; color:var(--muted); text-decoration:underline; cursor:pointer; font-size:12.5px; font-family:var(--font); padding:8px; }
+  footer button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <header class="dash-header">
+    <div class="brand">
+      <img src="logo.png" alt="FlyTrue Politics logo" class="logo" onerror="this.style.display='none'" />
+      <div class="brand-text">
+        <h1>FlyTrue Politics</h1>
+        <p class="tagline">Navigate politics correctly — ground school to cruise.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="dash-body">
+    <div class="col-main">
+
+      <div class="progress-block">
+        <div class="progress-top">
+          <span class="progress-label">Overall progress</span>
+          <span class="progress-count"><span id="doneCount">0</span> / 9</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+
+      <section class="leg" id="leg-g">
+        <div class="leg-head">
+          <span class="dotm ground"></span>
+          <span class="leg-title">Ground school</span>
+          <span class="leg-meta"><span id="gCount">0</span>/3</span>
+        </div>
+        <p class="leg-note">How the machinery works, before anyone's opinion of it. About two to three weeks.</p>
+        <div class="leg-items">
+          <label class="item" data-section="g" data-idx="0">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Play iCivics</span>
+              <span class="isub"><a href="https://www.icivics.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">icivics.org</a> — start with how the three branches interact</span>
+            </span>
+          </label>
+          <label class="item" data-section="g" data-idx="1">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Watch Crash Course U.S. Government and Politics</span>
+              <span class="isub"><a href="https://www.youtube.com/playlist?list=PL8dPuuaLjXtOfse2ncvffeelTrqvhrz8H" target="_blank" rel="noopener" onclick="event.stopPropagation()">Free playlist on YouTube</a> — 50 episodes, under 10 min each</span>
+            </span>
+          </label>
+          <label class="item" data-section="g" data-idx="2">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Explain the basics with no looking it up</span>
+              <span class="isub">Three branches, federal vs. state vs. local, how a bill becomes law</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="leg" id="leg-d">
+        <div class="leg-head">
+          <span class="dotm departure"></span>
+          <span class="leg-title">Departure</span>
+          <span class="leg-meta"><span id="dCount">0</span>/6</span>
+        </div>
+        <p class="leg-note">The actual documents and data, straight from the source. Another two to three weeks — can overlap with ground school.</p>
+        <div class="leg-items">
+          <label class="item" data-section="d" data-idx="0">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Read 5 clauses on the Interactive Constitution</span>
+              <span class="isub"><a href="https://constitutioncenter.org/the-constitution" target="_blank" rel="noopener" onclick="event.stopPropagation()">constitutioncenter.org</a> — a scholar from each side, per clause</span>
+            </span>
+          </label>
+          <label class="item" data-section="d" data-idx="1">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Read 3 case summaries on Oyez</span>
+              <span class="isub"><a href="https://www.oyez.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">oyez.org</a> — landmark Supreme Court cases, plain English</span>
+            </span>
+          </label>
+          <label class="item" data-section="d" data-idx="2">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">AP Gov / Econ, or the review videos</span>
+              <span class="isub">Take it if Gunn offers it — otherwise <a href="https://www.youtube.com/results?search_query=Heimler%27s+History+AP+Government+Review" target="_blank" rel="noopener" onclick="event.stopPropagation()">Heimler's History</a> on YouTube</span>
+            </span>
+          </label>
+          <label class="item" data-section="d" data-idx="3">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Follow one real bill start to finish</span>
+              <span class="isub"><a href="https://www.congress.gov" target="_blank" rel="noopener" onclick="event.stopPropagation()">congress.gov</a> — pick anything you actually care about</span>
+            </span>
+          </label>
+          <label class="item" data-section="d" data-idx="4">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Chart two indicators yourself</span>
+              <span class="isub"><a href="https://fred.stlouisfed.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">fred.stlouisfed.org</a> — inflation, wages, GDP, whatever you're curious about</span>
+            </span>
+          </label>
+          <label class="item" data-section="d" data-idx="5">
+            <input type="checkbox" class="chk" />
+            <span class="box" aria-hidden="true"></span>
+            <span class="itext">
+              <span class="ititle">Try the site-search trick once</span>
+              <span class="isub">A stat + "site:bls.gov" or "site:cbo.gov" — read the actual release</span>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="leg" id="leg-c">
+        <div class="leg-head">
+          <span class="dotm cruise"></span>
+          <span class="leg-title">Cruise</span>
+          <span class="leg-meta">ongoing</span>
+        </div>
+        <p class="leg-note">Not a checklist — the loop you settle into once ground school and departure are done.</p>
+        <ul class="loop-items">
+          <li><span><a href="https://ground.news" target="_blank" rel="noopener"><b>Ground News</b></a> check-in — a few minutes, most days</span></li>
+          <li><span><a href="https://apps.ankiweb.net/" target="_blank" rel="noopener"><b>Anki</b></a> review — a few minutes, most days</span></li>
+          <li><span><b>Steelman something you disagree with</b> — once a week</span></li>
+          <li><span><b>Explain one issue in plain language</b> — out loud, to someone, once a week</span></li>
+          <li><span><b>Read one issue from both sides</b> — a think tank from each lean, as things come up</span></li>
+          <li><span><a href="https://opentodebate.org" target="_blank" rel="noopener"><b>Open to Debate</b></a> episode — as time allows</span></li>
+        </ul>
+      </section>
+
+    </div>
+
+    <div class="col-side">
+
+      <div class="side-block">
+        <h2>Quick reference</h2>
+        <p class="hint">The shape of it, without re-reading everything.</p>
+        <div class="cheat-list">
+          <div><b>Three branches</b><span>Congress writes laws, the President's branch enforces them, courts interpret them.</span></div>
+          <div><b>Federal vs. state vs. local</b><span>Federal: military, currency, interstate commerce. State: schools, most criminal law, driving. Local: zoning, local police.</span></div>
+          <div><b>Bill to law</b><span>Introduced → committee → floor vote → other chamber → reconciled → president signs or vetoes (2/3 override, both chambers).</span></div>
+        </div>
+        <div class="chips">
+          <a class="chip" href="https://www.congress.gov" target="_blank" rel="noopener">Congress.gov</a>
+          <a class="chip" href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a>
+          <a class="chip" href="https://www.oyez.org" target="_blank" rel="noopener">Oyez</a>
+          <a class="chip" href="https://constitutioncenter.org/the-constitution" target="_blank" rel="noopener">Constitution Center</a>
+          <a class="chip" href="https://ground.news" target="_blank" rel="noopener">Ground News</a>
+          <a class="chip" href="https://opentodebate.org" target="_blank" rel="noopener">Open to Debate</a>
+          <a class="chip" href="https://www.icivics.org" target="_blank" rel="noopener">iCivics</a>
+        </div>
+      </div>
+
+      <div class="side-block notes-section">
+        <h2>Your notes</h2>
+        <p class="hint">One topic, a few bullets in your own words — becomes your Anki material later. Saves as you type.</p>
+        <textarea id="notesArea" placeholder="Federalism &#10;- ...&#10;- ..."></textarea>
+        <p class="save-hint" id="notesSaved">&nbsp;</p>
+      </div>
+
+      <div class="watch">
+        <p class="watch-title">Watching Withers (or anyone) live</p>
+        <p class="watch-note">Spot these while they're happening, not after:</p>
+        <div class="watch-grid">
+          <div><b>Gish gallop</b><span>More claims than anyone could fact-check in the time given</span></div>
+          <div><b>Strawmanning</b><span>Restating the other position in its weakest form, then attacking that</span></div>
+          <div><b>Motte-and-bailey</b><span>Defending a modest claim while implying a much bigger one</span></div>
+          <div><b>False dichotomy</b><span>Only two options offered when more actually exist</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    No login, nothing to break. Progress and notes save automatically. <button id="resetBtn" type="button">Reset progress</button>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var STATE_KEY = 'flytrue-politics-state';
+  var NOTES_KEY = 'flytrue-politics-notes';
+  var DEFAULT_STATE = { g: [false,false,false], d: [false,false,false,false,false,false] };
+  var state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+  function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STATE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        state = {
+          g: DEFAULT_STATE.g.map(function(_, i){ return !!(parsed.g && parsed.g[i]); }),
+          d: DEFAULT_STATE.d.map(function(_, i){ return !!(parsed.d && parsed.d[i]); })
+        };
+      }
+    } catch (e) { /* no saved progress yet, or storage unavailable */ }
+    applyStateToDOM();
+  }
+
+  function saveState(){
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn('FlyTrue: progress could not be saved this time.', e);
+    }
+  }
+
+  function applyStateToDOM(){
+    document.querySelectorAll('.item').forEach(function(item){
+      var section = item.getAttribute('data-section');
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      var checked = !!(state[section] && state[section][idx]);
+      item.querySelector('.chk').checked = checked;
+      item.classList.toggle('done', checked);
+    });
+    updateCounts();
+  }
+
+  function updateCounts(){
+    var gDone = state.g.filter(Boolean).length;
+    var dDone = state.d.filter(Boolean).length;
+    var total = gDone + dDone;
+    document.getElementById('gCount').textContent = gDone;
+    document.getElementById('dCount').textContent = dDone;
+    document.getElementById('doneCount').textContent = total;
+    document.getElementById('barFill').style.width = Math.round((total / 9) * 100) + '%';
+  }
+
+  document.querySelectorAll('.chk').forEach(function(input){
+    input.addEventListener('change', function(){
+      var item = input.closest('.item');
+      var section = item.getAttribute('data-section');
+      var idx = parseInt(item.getAttribute('data-idx'), 10);
+      state[section][idx] = input.checked;
+      item.classList.toggle('done', input.checked);
+      updateCounts();
+      saveState();
+    });
+  });
+
+  var resetArmed = false;
+  var resetTimer = null;
+  var resetBtn = document.getElementById('resetBtn');
+  resetBtn.addEventListener('click', function(){
+    if (!resetArmed) {
+      resetArmed = true;
+      resetBtn.textContent = 'Tap again to confirm reset';
+      resetTimer = setTimeout(function(){
+        resetArmed = false;
+        resetBtn.textContent = 'Reset progress';
+      }, 3000);
+    } else {
+      clearTimeout(resetTimer);
+      resetArmed = false;
+      resetBtn.textContent = 'Reset progress';
+      state = clone(DEFAULT_STATE);
+      applyStateToDOM();
+      saveState();
+    }
+  });
+
+  var notesArea = document.getElementById('notesArea');
+  var notesSaved = document.getElementById('notesSaved');
+  var notesTimer = null;
+  try {
+    var savedNotes = localStorage.getItem(NOTES_KEY);
+    if (savedNotes) notesArea.value = savedNotes;
+  } catch (e) { /* no saved notes yet, or storage unavailable */ }
+
+  notesArea.addEventListener('input', function(){
+    notesSaved.textContent = '';
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(function(){
+      try {
+        localStorage.setItem(NOTES_KEY, notesArea.value);
+        notesSaved.textContent = 'Saved';
+        setTimeout(function(){ notesSaved.textContent = ''; }, 1500);
+      } catch (e) {
+        notesSaved.textContent = 'Could not save';
+      }
+    }, 500);
+  });
+
+  loadState();
+})();
+</script>
+</body>
+</html>
