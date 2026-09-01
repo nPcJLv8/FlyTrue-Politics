@@ -101,6 +101,16 @@
   .notes-section textarea:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
   .save-hint{ font-size:12px; color:var(--muted); margin:8px 0 0; min-height:16px; }
 
+  .sync-block button{ font-family:var(--font); font-size:13.5px; font-weight:600; border-radius:8px; padding:9px 14px; cursor:pointer; }
+  .sync-block > button{ background:var(--green); color:var(--bg); border:none; width:100%; }
+  .sync-block > button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .sync-import{ display:flex; gap:8px; margin-top:10px; }
+  .sync-import input{ flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-family:var(--mono); font-size:12px; }
+  .sync-import input:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
+  .sync-import button{ background:transparent; color:var(--text); border:1px solid var(--line); }
+  .sync-import button:hover{ border-color:var(--blue); color:var(--blue); }
+  .sync-import button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+
   .watch{ border:1px solid var(--amber); border-radius:10px; padding:16px 18px; }
   .watch-title{ font-size:15px; font-weight:600; margin:0 0 4px; color:var(--amber); }
   .watch-note{ font-size:13px; color:var(--muted); margin:0 0 12px; }
@@ -278,8 +288,19 @@
         <p class="save-hint" id="notesSaved">&nbsp;</p>
       </div>
 
+      <div class="side-block sync-block">
+        <h2>Sync between devices</h2>
+        <p class="hint">No accounts, no tokens sitting in the page — this packages your progress and notes into a code you copy yourself and paste on the other device.</p>
+        <button id="exportBtn" type="button">Copy my progress as a code</button>
+        <div class="sync-import">
+          <input id="importInput" type="text" placeholder="Paste a code here" />
+          <button id="importBtn" type="button">Load</button>
+        </div>
+        <p class="save-hint" id="syncHint">&nbsp;</p>
+      </div>
+
       <div class="watch">
-        <p class="watch-title">Watching Withers (or anyone) live</p>
+        <p class="watch-title">Watching Debates</p>
         <p class="watch-note">Spot these while they're happening, not after:</p>
         <div class="watch-grid">
           <div><b>Gish gallop</b><span>More claims than anyone could fact-check in the time given</span></div>
@@ -403,6 +424,56 @@
         notesSaved.textContent = 'Could not save';
       }
     }, 500);
+  });
+
+  function encodePayload(payload){
+    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  }
+  function decodePayload(code){
+    return JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+  }
+
+  var exportBtn = document.getElementById('exportBtn');
+  var importInput = document.getElementById('importInput');
+  var importBtn = document.getElementById('importBtn');
+  var syncHint = document.getElementById('syncHint');
+
+  function flashSyncHint(msg){
+    syncHint.textContent = msg;
+    setTimeout(function(){ syncHint.textContent = ''; }, 4000);
+  }
+
+  exportBtn.addEventListener('click', function(){
+    var code = encodePayload({ g: state.g, d: state.d, notes: notesArea.value });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function(){
+        flashSyncHint('Copied — paste it on your other device.');
+      }).catch(function(){
+        importInput.value = code;
+        flashSyncHint('Copied into the box below instead — select and copy it manually.');
+      });
+    } else {
+      importInput.value = code;
+      flashSyncHint('Select the code below and copy it manually.');
+    }
+  });
+
+  importBtn.addEventListener('click', function(){
+    try {
+      var payload = decodePayload(importInput.value);
+      state = {
+        g: DEFAULT_STATE.g.map(function(_, i){ return !!(payload.g && payload.g[i]); }),
+        d: DEFAULT_STATE.d.map(function(_, i){ return !!(payload.d && payload.d[i]); })
+      };
+      if (typeof payload.notes === 'string') notesArea.value = payload.notes;
+      applyStateToDOM();
+      saveState();
+      localStorage.setItem(NOTES_KEY, notesArea.value);
+      importInput.value = '';
+      flashSyncHint('Loaded.');
+    } catch (e) {
+      flashSyncHint('That code did not look right — check you copied all of it.');
+    }
   });
 
   loadState();
