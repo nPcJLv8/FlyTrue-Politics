@@ -109,8 +109,17 @@
   .save-hint{ font-size:12px; color:var(--muted); margin:8px 0 0; min-height:16px; }
 
   .sync-block button{ font-family:var(--font); font-size:13.5px; font-weight:600; border-radius:8px; padding:9px 14px; cursor:pointer; }
-  .sync-block > button{ background:var(--green); color:var(--bg); border:none; width:100%; }
-  .sync-block > button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .sync-auto{ display:flex; gap:8px; }
+  .sync-auto input{ flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-family:var(--font); font-size:13.5px; }
+  .sync-auto input:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
+  .sync-auto button{ background:var(--green); color:var(--bg); border:none; flex:none; }
+  .sync-auto button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .sync-manual{ margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+  .sync-manual summary{ font-size:13px; color:var(--muted); cursor:pointer; font-weight:500; }
+  .sync-manual summary:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+  .sync-manual .hint{ margin-top:10px; }
+  .sync-manual > button{ background:transparent; color:var(--text); border:1px solid var(--line); width:100%; }
+  .sync-manual > button:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
   .sync-import{ display:flex; gap:8px; margin-top:10px; }
   .sync-import input{ flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-family:var(--mono); font-size:12px; }
   .sync-import input:focus-visible{ outline:2px solid var(--blue); outline-offset:1px; }
@@ -297,13 +306,23 @@
 
       <div class="side-block sync-block">
         <h2>Sync between devices</h2>
-        <p class="hint">No accounts, no tokens sitting in the page — this packages your progress and notes into a code you copy yourself and paste on the other device.</p>
-        <button id="exportBtn" type="button">Copy my progress as a code</button>
-        <div class="sync-import">
-          <input id="importInput" type="text" placeholder="Paste a code here" />
-          <button id="importBtn" type="button">Load</button>
+        <p class="hint">Set the same password on each device, once. After that, your progress and notes match automatically — nothing to copy or paste.</p>
+        <div class="sync-auto">
+          <input id="syncSecretInput" type="password" placeholder="Sync password" autocomplete="off" />
+          <button id="syncSecretSave" type="button">Save</button>
         </div>
-        <p class="save-hint" id="syncHint">&nbsp;</p>
+        <p class="save-hint" id="autoSyncHint">&nbsp;</p>
+
+        <details class="sync-manual">
+          <summary>Manual backup / one-off transfer</summary>
+          <p class="hint">No password needed — packages your progress into a code you copy yourself.</p>
+          <button id="exportBtn" type="button">Copy my progress as a code</button>
+          <div class="sync-import">
+            <input id="importInput" type="text" placeholder="Paste a code here" />
+            <button id="importBtn" type="button">Load</button>
+          </div>
+          <p class="save-hint" id="syncHint">&nbsp;</p>
+        </details>
       </div>
 
       <div class="watch">
@@ -387,6 +406,7 @@
       item.classList.toggle('done', input.checked);
       updateCounts();
       saveState();
+      pushToCloud();
     });
   });
 
@@ -408,6 +428,7 @@
       state = clone(DEFAULT_STATE);
       applyStateToDOM();
       saveState();
+      pushToCloud();
     }
   });
 
@@ -426,6 +447,7 @@
       try {
         localStorage.setItem(NOTES_KEY, notesArea.value);
         notesSaved.textContent = 'Saved';
+        pushToCloud();
         setTimeout(function(){ notesSaved.textContent = ''; }, 1500);
       } catch (e) {
         notesSaved.textContent = 'Could not save';
@@ -478,12 +500,82 @@
       localStorage.setItem(NOTES_KEY, notesArea.value);
       importInput.value = '';
       flashSyncHint('Loaded.');
+      pushToCloud();
     } catch (e) {
       flashSyncHint('That code did not look right — check you copied all of it.');
     }
   });
 
+  var SYNC_SECRET_KEY = 'flytrue-politics-syncsecret';
+  var syncSecretInput = document.getElementById('syncSecretInput');
+  var syncSecretSave = document.getElementById('syncSecretSave');
+  var autoSyncHint = document.getElementById('autoSyncHint');
+
+  function flashAutoSyncHint(msg){
+    autoSyncHint.textContent = msg;
+    setTimeout(function(){ autoSyncHint.textContent = ''; }, 4000);
+  }
+
+  function getSyncSecret(){
+    try { return localStorage.getItem(SYNC_SECRET_KEY) || ''; } catch (e) { return ''; }
+  }
+
+  (function(){
+    var existing = getSyncSecret();
+    if (existing) syncSecretInput.value = existing;
+  })();
+
+  syncSecretSave.addEventListener('click', function(){
+    var v = syncSecretInput.value.trim();
+    if (!v) { flashAutoSyncHint('Enter a password first.'); return; }
+    try { localStorage.setItem(SYNC_SECRET_KEY, v); } catch (e) {}
+    flashAutoSyncHint('Saved on this device — pulling latest…');
+    pullFromCloud();
+  });
+
+  async function pullFromCloud(){
+    var secret = getSyncSecret();
+    if (!secret) return;
+    try {
+      var res = await fetch('/api/sync', { headers: { 'X-Sync-Secret': secret } });
+      if (!res.ok) {
+        flashAutoSyncHint(res.status === 401 ? 'Wrong password.' : 'Could not reach sync right now.');
+        return;
+      }
+      var data = await res.json();
+      if (data && data.value) {
+        var payload = JSON.parse(data.value);
+        state = {
+          g: DEFAULT_STATE.g.map(function(_, i){ return !!(payload.g && payload.g[i]); }),
+          d: DEFAULT_STATE.d.map(function(_, i){ return !!(payload.d && payload.d[i]); })
+        };
+        if (typeof payload.notes === 'string') notesArea.value = payload.notes;
+        applyStateToDOM();
+        saveState();
+        try { localStorage.setItem(NOTES_KEY, notesArea.value); } catch (e) {}
+        flashAutoSyncHint('Synced.');
+      }
+    } catch (e) {
+      // Offline, or the function isn't set up yet — local copy still works fine on its own.
+    }
+  }
+
+  async function pushToCloud(){
+    var secret = getSyncSecret();
+    if (!secret) return;
+    try {
+      await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Secret': secret },
+        body: JSON.stringify({ g: state.g, d: state.d, notes: notesArea.value })
+      });
+    } catch (e) {
+      // Offline, or the function isn't set up yet — this device's local copy is still saved either way.
+    }
+  }
+
   loadState();
+  if (getSyncSecret()) pullFromCloud();
 })();
 </script>
 </body>
