@@ -158,7 +158,7 @@
       <div class="progress-block">
         <div class="progress-top">
           <span class="progress-label">Overall progress</span>
-          <span class="progress-count"><span id="doneCount">0</span> / 9</span>
+          <span class="progress-count"><span id="doneCount">0</span> / 8</span>
         </div>
         <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
       </div>
@@ -167,18 +167,10 @@
         <div class="leg-head">
           <span class="dotm ground"></span>
           <span class="leg-title">Ground school</span>
-          <span class="leg-meta"><span id="gCount">0</span>/3</span>
+          <span class="leg-meta"><span id="gCount">0</span>/2</span>
         </div>
         <p class="leg-note">How the machinery works, before anyone's opinion of it. About two to three weeks.</p>
         <div class="leg-items">
-          <label class="item" data-section="g" data-idx="0">
-            <input type="checkbox" class="chk" />
-            <span class="box" aria-hidden="true"></span>
-            <span class="itext">
-              <span class="ititle">Play iCivics</span>
-              <span class="isub"><a href="https://www.icivics.org" target="_blank" rel="noopener" onclick="event.stopPropagation()">icivics.org</a> — start with how the three branches interact</span>
-            </span>
-          </label>
           <label class="item" data-section="g" data-idx="1">
             <input type="checkbox" class="chk" />
             <span class="box" aria-hidden="true"></span>
@@ -388,13 +380,13 @@
   }
 
   function updateCounts(){
-    var gDone = state.g.filter(Boolean).length;
+    var gDone = state.g.slice(1).filter(Boolean).length;
     var dDone = state.d.filter(Boolean).length;
     var total = gDone + dDone;
     document.getElementById('gCount').textContent = gDone;
     document.getElementById('dCount').textContent = dDone;
     document.getElementById('doneCount').textContent = total;
-    document.getElementById('barFill').style.width = Math.round((total / 9) * 100) + '%';
+    document.getElementById('barFill').style.width = Math.round((total / 8) * 100) + '%';
   }
 
   document.querySelectorAll('.chk').forEach(function(input){
